@@ -50,17 +50,35 @@ fn generate_rbs_from_openapi(spec: &OpenAPI, output_path: &str) -> io::Result<()
                         ReferenceOr::Item(request_body) => {
                             for (_content_type, media_type) in &request_body.content {
                                 if let Some(schema) = &media_type.schema {
-                                    if let ReferenceOr::Item(schema) = schema {
-                                        let rbs_definition = convert_schema_to_rbs(
-                                            &format!(
-                                                "{}{}RequestBody",
-                                                convert_path_to_camel_case(method),
-                                                convert_path_to_camel_case(path)
-                                            ),
-                                            schema,
-                                            spec,
-                                        );
-                                        writeln!(file, "{}", rbs_definition)?;
+                                    match schema {
+                                        ReferenceOr::Item(schema) => {
+                                            let rbs_definition = convert_schema_to_rbs(
+                                                &format!(
+                                                    "{}{}RequestBody",
+                                                    convert_path_to_camel_case(method),
+                                                    convert_path_to_camel_case(path)
+                                                ),
+                                                schema,
+                                                spec,
+                                            );
+                                            writeln!(file, "{}", rbs_definition)?;
+                                        }
+                                        ReferenceOr::Reference { reference } => {
+                                            resolve_reference_to_schema(reference, spec).map(
+                                                |schema| {
+                                                    let rbs_definition = convert_schema_to_rbs(
+                                                        &format!(
+                                                            "{}{}RequestBody",
+                                                            convert_path_to_camel_case(method),
+                                                            convert_path_to_camel_case(path)
+                                                        ),
+                                                        &schema,
+                                                        spec,
+                                                    );
+                                                    writeln!(file, "{}", rbs_definition).unwrap();
+                                                },
+                                            );
+                                        }
                                     }
                                 }
                             }
@@ -87,17 +105,30 @@ fn generate_rbs_from_openapi(spec: &OpenAPI, output_path: &str) -> io::Result<()
                         ReferenceOr::Item(response) => {
                             for (_content_type, media_type) in &response.content {
                                 if let Some(schema) = &media_type.schema {
-                                    if let ReferenceOr::Item(schema) = schema {
-                                        let rbs_definition = convert_schema_to_rbs(
-                                            &format!(
-                                                "{}{}Response",
-                                                convert_path_to_camel_case(path),
-                                                status_code
-                                            ),
-                                            schema,
-                                            spec,
-                                        );
-                                        writeln!(file, "{}", rbs_definition)?;
+                                    match schema {
+                                        ReferenceOr::Item(schema) => {
+                                            let rbs_definition = convert_schema_to_rbs(
+                                                &format!(
+                                                    "{}{}Response",
+                                                    convert_path_to_camel_case(path),
+                                                    status_code
+                                                ),
+                                                schema,
+                                                spec,
+                                            );
+                                            writeln!(file, "{}", rbs_definition)?;
+                                        }
+                                        ReferenceOr::Reference { reference } => {
+                                            let rbs_definition = convert_ref_directly_to_rbs(
+                                                &format!(
+                                                    "{}{}Response",
+                                                    convert_path_to_camel_case(path),
+                                                    status_code
+                                                ),
+                                                &resolve_reference_to_schema_name(reference),
+                                            );
+                                            writeln!(file, "{}", rbs_definition).unwrap();
+                                        }
                                     }
                                 }
                             }
@@ -152,6 +183,11 @@ fn convert_schema_to_rbs(name: &str, schema: &Schema, spec: &OpenAPI) -> String 
     }
 
     rbs.push_str("end\n");
+    rbs
+}
+
+fn convert_ref_directly_to_rbs(name: &str, ref_name: &str) -> String {
+    let rbs = format!("class {} < {}\nend\n", name, ref_name);
     rbs
 }
 
@@ -214,6 +250,34 @@ fn map_schema_type_to_rbs(schema: &Schema, spec: &OpenAPI) -> String {
             rbs.push_str(&record_items);
             rbs.push_str(" }");
             rbs
+        }
+        SchemaKind::OneOf { one_of } => {
+            let mut rbs = "{ ".to_string();
+            let one_of_items = one_of
+                .iter()
+                .map(|schema_ref| match schema_ref {
+                    ReferenceOr::Item(schema) => map_schema_type_to_rbs(schema, spec),
+                    ReferenceOr::Reference { reference } => {
+                        resolve_reference_to_schema_name(reference)
+                    }
+                })
+                .collect::<Vec<String>>()
+                .join(" | ");
+            rbs.push_str(&one_of_items);
+            rbs.push_str(" }");
+            rbs
+        }
+        SchemaKind::AllOf { all_of } => all_of
+            .iter()
+            .map(|schema_ref| match schema_ref {
+                ReferenceOr::Item(schema) => map_schema_type_to_rbs(schema, spec),
+                ReferenceOr::Reference { reference } => resolve_reference_to_schema_name(reference),
+            })
+            .collect::<Vec<String>>()
+            .join(" & "),
+        SchemaKind::AnyOf { any_of } => {
+            dbg!(any_of);
+            "untyped".to_string()
         }
         _ => "untyped".to_string(),
     }
