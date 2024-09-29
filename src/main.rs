@@ -80,7 +80,30 @@ fn map_schema_type_to_rbs(schema: &Schema) -> String {
                 "Array[untyped]".to_string()
             }
         }
-        SchemaKind::Type(Type::Object(_)) => "Hash[untyped, untyped]".to_string(),
+        SchemaKind::Type(Type::Object(object_type)) => {
+            let mut rbs = "{ ".to_string();
+            let record_items = object_type
+                .properties
+                .iter()
+                .map(|(prop_name, prop_schema_ref)| {
+                    if let ReferenceOr::Item(prop_schema) = prop_schema_ref {
+                        let prop_key = match prop_name.as_str() {
+                            "type" => ":'type'".to_string(),
+                            "class" => ":'class'".to_string(),
+                            _ => prop_name.to_string(),
+                        };
+                        let prop_type = map_schema_type_to_rbs(prop_schema);
+                        format!("{}: {}", prop_key, prop_type)
+                    } else {
+                        "untyped".to_string()
+                    }
+                })
+                .collect::<Vec<String>>()
+                .join(", ");
+            rbs.push_str(&record_items);
+            rbs.push_str(" }");
+            rbs
+        }
         _ => "untyped".to_string(),
     }
 }
