@@ -1,5 +1,5 @@
 [package]
-name = "openapi_parser"
+name = "openapi_rbs_genarator"
 version = "0.1.0"
 edition = "2021"
 
