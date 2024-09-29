@@ -64,6 +64,7 @@ fn convert_schema_to_rbs(name: &str, schema: &Schema) -> String {
 fn map_schema_type_to_rbs(schema: &Schema) -> String {
     match &schema.schema_kind {
         SchemaKind::Type(Type::String(_)) => "String".to_string(),
+        SchemaKind::Type(Type::Number(_)) => "Numeric".to_string(),
         SchemaKind::Type(Type::Integer(_)) => "Integer".to_string(),
         SchemaKind::Type(Type::Boolean(_)) => "Bool".to_string(),
         SchemaKind::Type(Type::Array(array_type)) => {
