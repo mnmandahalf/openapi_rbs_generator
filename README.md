@@ -1,5 +1,5 @@
 # sample
 
 ```sh
-cargo run -- tests/inputs/petstore.json
+cargo run -- -i tests/inputs/petstore.json -o output.rbs 
 ```

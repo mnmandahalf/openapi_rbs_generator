@@ -1,8 +1,24 @@
-use clap::{App, Arg};
+use clap::Parser;
 use openapiv3::{OpenAPI, ReferenceOr, Schema, SchemaKind, Type};
 use serde_json::Result;
 use std::fs::File;
 use std::io::{self, Read, Write};
+
+#[derive(Parser, Debug)]
+#[command(name = "OpenAPI to RBS Generator")]
+#[command(author = "mnmandahalf")]
+#[command(version = "0.1.0")]
+#[command(about = "Generates RBS type definitions from OpenAPI schema")]
+
+struct Args {
+    // the input openapi json file path
+    #[arg(short, long)]
+    input: String,
+
+    // the output rbs file path
+    #[arg(short, long, default_value = "output.rbs")]
+    output: String,
+}
 
 fn parse_json_to_openapi(file_path: &str) -> Result<OpenAPI> {
     let mut file = File::open(file_path).expect("file not found");
@@ -69,21 +85,13 @@ fn map_schema_type_to_rbs(schema: &Schema) -> String {
 }
 
 fn main() {
-    let matches = App::new("openapi-rbs-generator")
-        .version("1.0")
-        .author("mnmandahalf")
-        .about("Parses OpenAPI JSON files and generates RBS files")
-        .arg(
-            Arg::with_name("FILE")
-                .help("Sets the input file to use")
-                .required(true)
-                .index(1),
-        )
-        .get_matches();
+    let args = Args::parse();
 
-    let file_path = matches.value_of("FILE").unwrap();
-    match parse_json_to_openapi(file_path) {
-        Ok(spec) => match generate_rbs_from_openapi(&spec, "output.rbs") {
+    let input_path = &args.input;
+    let output_path = &args.output;
+
+    match parse_json_to_openapi(input_path) {
+        Ok(spec) => match generate_rbs_from_openapi(&spec, output_path) {
             Ok(_) => println!("Successfully generated RBS file"),
             Err(e) => println!("Error writing RBS file: {}", e),
         },
