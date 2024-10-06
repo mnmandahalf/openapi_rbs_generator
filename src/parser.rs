@@ -162,7 +162,7 @@ fn convert_schema_to_rbs(name: &str, schema: &Schema, spec: &OpenAPI) -> String 
         for (prop_name, prop_schema_ref) in &object_type.properties {
             if let ReferenceOr::Item(prop_schema) = prop_schema_ref {
                 let prop_type = map_schema_type_to_rbs(prop_schema, spec);
-                rbs.push_str(&format!("  {}: {}\n", prop_name, prop_type));
+                rbs.push_str(&format!("  {}: {}\n", escape_rbs_reserved_prop_name(prop_name), prop_type));
             }
         }
     }
@@ -209,23 +209,13 @@ fn map_schema_type_to_rbs(schema: &Schema, spec: &OpenAPI) -> String {
                 .iter()
                 .map(|(prop_name, prop_schema_ref)| match prop_schema_ref {
                     ReferenceOr::Item(prop_schema) => {
-                        let prop_key = match prop_name.as_str() {
-                            "type" => ":'type'".to_string(),
-                            "class" => ":'class'".to_string(),
-                            _ => prop_name.to_string(),
-                        };
                         let prop_type = map_schema_type_to_rbs(prop_schema, spec);
-                        format!("{}: {}", prop_key, prop_type)
+                        format!("{}: {}", escape_rbs_reserved_prop_name(prop_name), prop_type)
                     }
                     ReferenceOr::Reference { reference } => {
-                        let prop_key = match prop_name.as_str() {
-                            "type" => ":'type'".to_string(),
-                            "class" => ":'class'".to_string(),
-                            _ => prop_name.to_string(),
-                        };
                         format!(
                             "{}: {}",
-                            prop_key,
+                            escape_rbs_reserved_prop_name(prop_name),
                             resolve_reference_to_schema_name(reference)
                         )
                     }
@@ -282,4 +272,12 @@ fn resolve_reference_to_schema(reference: &str, spec: &OpenAPI) -> Option<Schema
         }
     }
     None
+}
+
+fn escape_rbs_reserved_prop_name(name: &str) -> String {
+    match name {
+        "type" => ":'type'".to_string(),
+        "class" => ":'class'".to_string(),
+        _ => name.to_string(),
+    }
 }
