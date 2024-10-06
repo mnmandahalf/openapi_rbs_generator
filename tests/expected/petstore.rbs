@@ -12,7 +12,7 @@ class Error < Struct
   message: String
 end
 
-class Pets200Response < Pets
+class GetPets200Response < Pets
 end
 
 class PostPetsRequestBody < Struct
@@ -21,6 +21,6 @@ class PostPetsRequestBody < Struct
   tag: String
 end
 
-class PetsPetId200Response < Pet
+class GetPetsPetId200Response < Pet
 end
 

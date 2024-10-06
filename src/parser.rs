@@ -92,7 +92,8 @@ pub fn generate_rbs_from_openapi(spec: &OpenAPI, output_path: &str) -> io::Resul
                                         ReferenceOr::Item(schema) => {
                                             let rbs_definition = convert_schema_to_rbs(
                                                 &format!(
-                                                    "{}{}Response",
+                                                    "{}{}{}Response",
+                                                    convert_path_to_camel_case(method),
                                                     convert_path_to_camel_case(path),
                                                     status_code
                                                 ),
@@ -104,7 +105,8 @@ pub fn generate_rbs_from_openapi(spec: &OpenAPI, output_path: &str) -> io::Resul
                                         ReferenceOr::Reference { reference } => {
                                             let rbs_definition = convert_ref_directly_to_rbs(
                                                 &format!(
-                                                    "{}{}Response",
+                                                    "{}{}{}Response",
+                                                    convert_path_to_camel_case(method),
                                                     convert_path_to_camel_case(path),
                                                     status_code
                                                 ),
