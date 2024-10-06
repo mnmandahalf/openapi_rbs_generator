@@ -155,6 +155,16 @@ fn convert_path_to_camel_case(path: &str) -> String {
         .join("")
 }
 
+#[test]
+fn test_convert_path_to_camel_case() {
+    assert_eq!(convert_path_to_camel_case("/pets"), "Pets");
+    assert_eq!(convert_path_to_camel_case("/pets/{petId}"), "PetsPetId");
+    assert_eq!(
+        convert_path_to_camel_case("/pets/{petId}/photos"),
+        "PetsPetIdPhotos"
+    );
+}
+
 fn convert_schema_to_rbs(name: &str, schema: &Schema, spec: &OpenAPI) -> String {
     let mut rbs = format!("class {} < Struct\n", name);
 
@@ -162,7 +172,11 @@ fn convert_schema_to_rbs(name: &str, schema: &Schema, spec: &OpenAPI) -> String 
         for (prop_name, prop_schema_ref) in &object_type.properties {
             if let ReferenceOr::Item(prop_schema) = prop_schema_ref {
                 let prop_type = map_schema_type_to_rbs(prop_schema, spec);
-                rbs.push_str(&format!("  {}: {}\n", escape_rbs_reserved_prop_name(prop_name), prop_type));
+                rbs.push_str(&format!(
+                    "  {}: {}\n",
+                    escape_rbs_reserved_prop_name(prop_name),
+                    prop_type
+                ));
             }
         }
     }
@@ -210,7 +224,11 @@ fn map_schema_type_to_rbs(schema: &Schema, spec: &OpenAPI) -> String {
                 .map(|(prop_name, prop_schema_ref)| match prop_schema_ref {
                     ReferenceOr::Item(prop_schema) => {
                         let prop_type = map_schema_type_to_rbs(prop_schema, spec);
-                        format!("{}: {}", escape_rbs_reserved_prop_name(prop_name), prop_type)
+                        format!(
+                            "{}: {}",
+                            escape_rbs_reserved_prop_name(prop_name),
+                            prop_type
+                        )
                     }
                     ReferenceOr::Reference { reference } => {
                         format!(
