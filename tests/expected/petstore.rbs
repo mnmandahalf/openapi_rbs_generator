@@ -5,6 +5,7 @@ class Pet < Struct
 end
 
 class Pets < Struct
+  attr_reader :pets, type: Array[Pet]
 end
 
 class Error < Struct

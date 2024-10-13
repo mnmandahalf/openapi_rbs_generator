@@ -167,18 +167,41 @@ fn test_convert_path_to_camel_case() {
 
 fn convert_schema_to_rbs(name: &str, schema: &Schema, spec: &OpenAPI) -> String {
     let mut rbs = format!("class {} < Struct\n", name);
-
-    if let SchemaKind::Type(Type::Object(object_type)) = &schema.schema_kind {
-        for (prop_name, prop_schema_ref) in &object_type.properties {
-            if let ReferenceOr::Item(prop_schema) = prop_schema_ref {
-                let prop_type = map_schema_type_to_rbs(prop_schema, spec);
-                rbs.push_str(&format!(
-                    "  {}: {}\n",
-                    escape_rbs_reserved_prop_name(prop_name),
-                    prop_type
-                ));
+    match &schema.schema_kind {
+        SchemaKind::Type(Type::Object(object_type)) => {
+            for (prop_name, prop_schema_ref) in &object_type.properties {
+                if let ReferenceOr::Item(prop_schema) = prop_schema_ref {
+                    let prop_type = map_schema_type_to_rbs(prop_schema, spec);
+                    rbs.push_str(&format!(
+                        "  {}: {}\n",
+                        escape_rbs_reserved_prop_name(prop_name),
+                        prop_type
+                    ));
+                }
             }
         }
+        SchemaKind::Type(Type::Array(array_type)) => {
+            let attr_reader_name = name.to_lowercase();
+            if let Some(items) = &array_type.items {
+                match items {
+                    ReferenceOr::Item(item_schema_box) => {
+                        let item_type = map_schema_type_to_rbs(item_schema_box.as_ref(), spec);
+                        rbs.push_str(&format!(
+                            "  attr_reader :{}, type: Array[{}]\n",
+                            attr_reader_name, item_type
+                        ));
+                    }
+                    ReferenceOr::Reference { reference } => {
+                        let item_type = resolve_reference_to_schema_name(reference);
+                        rbs.push_str(&format!(
+                            "  attr_reader :{}, type: Array[{}]\n",
+                            attr_reader_name, item_type
+                        ));
+                    }
+                }
+            }
+        }
+        _ => {}
     }
 
     rbs.push_str("end\n");
