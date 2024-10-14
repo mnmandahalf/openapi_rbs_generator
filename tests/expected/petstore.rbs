@@ -1,25 +1,25 @@
-class Pet < Struct
-  id: Integer
-  name: String
-  tag: String
+class Pet
+  def id: () -> Integer
+  def name: () -> String
+  def tag: () -> String
 end
 
-class Pets < Struct
-  attr_reader :pets, type: Array[Pet]
+class Pets
+  def pets: () -> Array[Pet]
 end
 
-class Error < Struct
-  code: Integer
-  message: String
+class Error
+  def code: () -> Integer
+  def message: () -> String
 end
 
 class GetPets200Response < Pets
 end
 
-class PostPetsRequestBody < Struct
-  id: Integer
-  name: String
-  tag: String
+class PostPetsRequestBody
+  def id: () -> Integer
+  def name: () -> String
+  def tag: () -> String
 end
 
 class GetPetsPetId200Response < Pet

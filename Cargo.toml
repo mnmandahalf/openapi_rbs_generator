@@ -8,6 +8,8 @@ openapiv3 = "2.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 clap = { version = "4.0", features = ["derive"] }
+handlebars = "6.1.0"
+anyhow = "1.0.89"
 
 [dev-dependencies]
 assert_cmd = "2.0.16"

@@ -1,0 +1,10 @@
+{{ #each classes }}
+class {{class_name}}{{#if extends}} < {{extends}}{{/if}}
+{{#if methods}}
+{{#each methods}}
+  def {{name}}: ({{args}}) -> {{return_type}}
+{{/each}}
+{{/if}}
+end
+
+{{/ each }}
